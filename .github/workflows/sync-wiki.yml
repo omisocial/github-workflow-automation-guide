@@ -1,0 +1,51 @@
+name: Sync Wiki
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'docs/wiki/**'
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Clone or init wiki
+        run: |
+          WIKI_URL="https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.wiki.git"
+
+          if git clone "$WIKI_URL" wiki-repo 2>/dev/null; then
+            echo "Wiki cloned successfully"
+          else
+            echo "Wiki not initialized yet, creating..."
+            mkdir wiki-repo
+            cd wiki-repo
+            git init
+            git remote add origin "$WIKI_URL"
+          fi
+
+      - name: Sync docs/wiki to wiki repo
+        run: |
+          cp -r docs/wiki/. wiki-repo/
+          cd wiki-repo
+
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No wiki changes to sync"
+          else
+            git commit -m "sync wiki from docs/wiki/ [skip ci]"
+            git push origin HEAD:master 2>/dev/null || \
+            git push origin HEAD:main 2>/dev/null || \
+            echo "Push failed — wiki may not be initialized yet. Create first page manually at github.com/${{ github.repository }}/wiki"
+          fi
