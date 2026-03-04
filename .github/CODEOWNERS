@@ -1,0 +1,12 @@
+# CODEOWNERS — Assign reviewers automatically
+# Xem hướng dẫn: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Global owners (fallback)
+* @omisocial
+
+# GitHub Actions / CI
+/.github/ @omisocial
+
+# Docs
+*.md @omisocial
+/docs/ @omisocial

@@ -1,0 +1,59 @@
+name: AI Code Review
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get changed files
+        id: changed
+        run: |
+          files=$(git diff --name-only origin/${{ github.base_ref }}...HEAD)
+          echo "files<<EOF" >> $GITHUB_OUTPUT
+          echo "$files" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Get diff
+        id: diff
+        run: |
+          diff=$(git diff origin/${{ github.base_ref }}...HEAD | head -c 50000)
+          echo "diff<<EOF" >> $GITHUB_OUTPUT
+          echo "$diff" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: AI Review via Claude
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { Anthropic } = require('@anthropic-ai/sdk');
+            const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+
+            const response = await client.messages.create({
+              model: "claude-sonnet-4-6",
+              max_tokens: 4096,
+              messages: [{
+                role: "user",
+                content: `Review this PR diff and provide constructive feedback in Vietnamese or English:\n\nChanged files:\n${{ steps.changed.outputs.files }}\n\nDiff:\n${{ steps.diff.outputs.diff }}\n\nProvide:\n1. 📋 Summary of changes\n2. ✅ What looks good\n3. ⚠️ Potential issues or bugs\n4. 💡 Suggestions for improvement\n5. 🔒 Security concerns if any\n\nFormat as GitHub markdown.`
+              }]
+            });
+
+            await github.rest.pulls.createReview({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+              body: response.content[0].text,
+              event: 'COMMENT'
+            });
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}

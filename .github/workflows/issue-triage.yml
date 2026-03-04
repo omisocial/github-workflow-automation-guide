@@ -1,0 +1,84 @@
+name: Issue Triage
+
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  triage:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+
+    steps:
+      - name: Analyze and label issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { Anthropic } = require('@anthropic-ai/sdk');
+            const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+
+            const issue = context.payload.issue;
+
+            const response = await client.messages.create({
+              model: "claude-haiku-4-5-20251001",
+              max_tokens: 512,
+              messages: [{
+                role: "user",
+                content: `Analyze this GitHub issue and return ONLY valid JSON (no markdown):
+
+Title: ${issue.title}
+Body: ${issue.body || '(empty)'}
+
+Return JSON:
+{
+  "type": "bug" | "feature" | "question" | "docs" | "other",
+  "severity": "low" | "medium" | "high" | "critical",
+  "area": "frontend" | "backend" | "api" | "docs" | "ci" | "other",
+  "hasReproSteps": true | false,
+  "suggestedLabels": ["label1"]
+}`
+              }]
+            });
+
+            let analysis;
+            try {
+              analysis = JSON.parse(response.content[0].text);
+            } catch (e) {
+              console.log('Could not parse AI response, using defaults');
+              analysis = { type: 'other', severity: 'low', suggestedLabels: [] };
+            }
+
+            const labels = [];
+            if (analysis.type === 'bug') labels.push('bug');
+            else if (analysis.type === 'feature') labels.push('enhancement');
+            else if (analysis.type === 'question') labels.push('question');
+            else if (analysis.type === 'docs') labels.push('documentation');
+
+            if (analysis.severity === 'high' || analysis.severity === 'critical') {
+              labels.push('priority: high');
+            }
+
+            if (labels.length > 0) {
+              try {
+                await github.rest.issues.addLabels({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issue.number,
+                  labels: labels
+                });
+              } catch (e) {
+                console.log('Some labels may not exist yet:', e.message);
+              }
+            }
+
+            if (analysis.type === 'bug' && !analysis.hasReproSteps) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                body: `Thanks for reporting this issue! 🙏\n\nTo help us investigate faster, could you provide:\n- Steps to reproduce\n- Expected vs actual behavior\n- Environment (OS, version, etc.)\n\nThis will help us resolve it much faster!`
+              });
+            }
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
