@@ -11,6 +11,18 @@ Skill `github-workflow-automation` cung cấp các patterns và template YAML/Ty
 - **Smart CI/CD** — Chạy test thông minh, deploy có AI validation
 - **Git Operations** — Auto rebase, cherry-pick, branch cleanup
 - **On-demand Bot** — `@mention` bot trả lời câu hỏi về code
+- **Jobs to Be Done (JTBD)** — Phân tích và ánh xạ JTBD vào workflow tự động hóa
+
+## 🆕 Changelog
+
+### v2.0.0 — 2026-03-04
+- ✨ Thêm **Jobs to Be Done (JTBD)** framework — ánh xạ nhu cầu người dùng vào workflow automation
+- 📖 Mở rộng tài liệu wiki với hướng dẫn chi tiết JTBD
+- 🔧 Cải thiện các patterns AI PR Review và Issue Triage
+
+### v1.0.0 — 2026-03-04
+- 🎉 Ra mắt skill `github-workflow-automation`
+- Bao gồm: AI PR Review, Issue Triage, CI/CD, Git Ops, Mention Bot
 
 ## 🗂 Cấu trúc Repository
 
@@ -69,6 +81,18 @@ Xem **[GitHub Wiki](../../wiki)** để có hướng dẫn chi tiết từng wor
 | [Git Operations](../../wiki/Git-Operations) | Rebase, cherry-pick |
 | [Mention Bot](../../wiki/Mention-Bot) | @ai-helper commands |
 | [Best Practices](../../wiki/Best-Practices) | Security & tips |
+| [Jobs to Be Done](../../wiki/Jobs-to-Be-Done) | JTBD framework & automation |
+
+## 🎯 Jobs to Be Done (JTBD)
+
+Framework JTBD giúp ánh xạ **nhu cầu thực sự của developer** vào các workflow automation phù hợp:
+
+| Job | Workflow phù hợp |
+|-----|-----------------|
+| "Tôi muốn merge code nhanh mà không lo lỗi" | AI PR Review |
+| "Tôi muốn issue được phân loại ngay lập tức" | Issue Triage |
+| "Tôi muốn deploy an toàn, không cần manual check" | Deploy + AI Validation |
+| "Tôi muốn hỏi AI về code ngay trong PR" | Mention Bot |
 
 ## 🛠 Skill trong Claude Code
 
